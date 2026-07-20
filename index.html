@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Relay</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!--
+  Scaffold only. Real markup (dish, slots, HUD, request cards) gets built
+  out in the "canvas boilerplate and static HUD layout" commit. This shell
+  just proves the script load order works before any logic exists.
+-->
+<div id="game-root">
+  <canvas id="gameCanvas" width="960" height="600"></canvas>
+</div>
+
+<!-- Load order matters: each system module attaches to a shared
+     window.SignalRelay namespace, main.js runs last and wires them up. -->
+<script src="src/stationCore.js"></script>
+<script src="src/bandwidthRouter.js"></script>
+<script src="src/heatManager.js"></script>
+<script src="src/requestQueue.js"></script>
+<script src="src/render.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>

@@ -26,6 +26,10 @@ window.SignalRelay.stationCore = (function () {
     runState: "start", // "start" | "playing" | "gameover" | "daycomplete"
   };
 
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
   function reset() {
     station.time = 0;
     station.reputation = REPUTATION_START;
@@ -33,16 +37,30 @@ window.SignalRelay.stationCore = (function () {
   }
 
   function startRun() {
-    // TODO: transition start -> playing
+    if (station.runState === "start") {
+      station.runState = "playing";
+    }
   }
 
   function tick(deltaTime) {
-    // TODO: advance station.time, check win/lose conditions
+    if (station.runState !== "playing") return;
+
+    station.time += deltaTime;
+
+    if (station.time >= RUN_DURATION_SECONDS) {
+      station.time = RUN_DURATION_SECONDS;
+      station.runState = "daycomplete";
+    }
   }
 
   function applyReputationDelta(amount) {
-    // TODO: only entry point allowed to modify reputation
-    // TODO: trigger gameover runState if reputation <= 0
+    // Sole entry point for changing reputation, per the GDD state
+    // ownership table — Request Queue is the only caller of this.
+    station.reputation = clamp(station.reputation + amount, 0, 100);
+
+    if (station.reputation <= 0 && station.runState === "playing") {
+      station.runState = "gameover";
+    }
   }
 
   return {

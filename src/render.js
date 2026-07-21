@@ -173,6 +173,39 @@ window.SignalRelay.render = (function () {
     ctx.fillText("LOCKOUT", DISH_X, DISH_Y + 5);
   }
 
+  function drawStateOverlay() {
+    const station = window.SignalRelay.stationCore.station;
+    if (station.runState === "playing") return;
+
+    ctx.fillStyle = "rgba(14, 20, 27, 0.88)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.textAlign = "center";
+
+    if (station.runState === "start") {
+      ctx.fillStyle = "#e6edf3";
+      ctx.font = "28px Arial";
+      ctx.fillText("Signal Relay", canvas.width / 2, canvas.height / 2 - 20);
+      ctx.fillStyle = "#8b98a5";
+      ctx.font = "16px Arial";
+      ctx.fillText("Click anywhere to start your shift", canvas.width / 2, canvas.height / 2 + 16);
+    } else if (station.runState === "gameover") {
+      ctx.fillStyle = "#f85149";
+      ctx.font = "26px Arial";
+      ctx.fillText("SYSTEM FAILURE", canvas.width / 2, canvas.height / 2 - 20);
+      ctx.fillStyle = "#8b98a5";
+      ctx.font = "16px Arial";
+      ctx.fillText("Reputation depleted — click to return to start", canvas.width / 2, canvas.height / 2 + 16);
+    } else if (station.runState === "daycomplete") {
+      ctx.fillStyle = "#3fb950";
+      ctx.font = "26px Arial";
+      ctx.fillText("DAY COMPLETE", canvas.width / 2, canvas.height / 2 - 20);
+      ctx.fillStyle = "#8b98a5";
+      ctx.font = "16px Arial";
+      ctx.fillText(`Final reputation: ${Math.round(station.reputation)} — click to return to start`, canvas.width / 2, canvas.height / 2 + 16);
+    }
+  }
+
   function drawFrame() {
     drawBackground();
     drawDish();
@@ -180,6 +213,7 @@ window.SignalRelay.render = (function () {
     drawHUD();
     drawDragLine();
     drawLockoutBanner();
+    drawStateOverlay();
   }
 
   return {

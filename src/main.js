@@ -62,10 +62,10 @@
     const station = window.SignalRelay.stationCore.station;
 
     if (station.runState === "playing") {
+      window.SignalRelay.bandwidthRouter.updateDelivery(deltaTime, window.SignalRelay.heatManager.isThrottled());
       window.SignalRelay.requestQueue.tick(deltaTime, station.time);
-      // TODO: once wired in, tick these here too, in order:
-      //   2. bandwidthRouter.updateDelivery (feeds requestQueue)
-      //   3. heatManager.tick (reads bandwidthRouter active count)
+      // TODO: once wired in, tick this here too:
+      //   heatManager.tick (reads bandwidthRouter active count)
     }
 
     window.SignalRelay.stationCore.tick(deltaTime);

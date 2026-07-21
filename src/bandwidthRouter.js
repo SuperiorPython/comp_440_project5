@@ -108,8 +108,19 @@ window.SignalRelay.bandwidthRouter = (function () {
   }
 
   function updateDelivery(deltaTime, isThrottled) {
-    // TODO: wired in next commit — for each bound slot, increment that
-    // request's bandwidthDelivered at the current (possibly throttled) rate.
+    const rate = isThrottled ? THROTTLED_DELIVERY_RATE : BANDWIDTH_DELIVERY_RATE;
+    const requests = window.SignalRelay.requestQueue.queueState.requests;
+
+    router.slots.forEach((requestId) => {
+      if (requestId === null) return;
+      const request = requests.find((r) => r.id === requestId);
+      if (!request) return; // defensive: slot pointed at a request that's already gone
+
+      request.bandwidthDelivered = Math.min(
+        request.bandwidthNeeded,
+        request.bandwidthDelivered + rate * deltaTime
+      );
+    });
   }
 
   return {

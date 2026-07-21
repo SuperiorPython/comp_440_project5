@@ -8,13 +8,10 @@
 </head>
 <body>
 
-<!--
-  Scaffold only. Real markup (dish, slots, HUD, request cards) gets built
-  out in the "canvas boilerplate and static HUD layout" commit. This shell
-  just proves the script load order works before any logic exists.
--->
 <div id="game-root">
+  <h1>Signal Relay</h1>
   <canvas id="gameCanvas" width="960" height="600"></canvas>
+  <p id="caption">Drag from the dish to a request to route bandwidth.</p>
 </div>
 
 <!-- Load order matters: each system module attaches to a shared

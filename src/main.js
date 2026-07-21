@@ -22,7 +22,11 @@
     //   2. bandwidthRouter.updateDelivery (feeds requestQueue)
     //   3. heatManager.tick (reads bandwidthRouter active count)
     //   4. stationCore.tick (advances time, checks win/lose)
-    // TODO: render.drawFrame() always, regardless of runState
+
+    // Rendering runs every frame regardless of runState — this commit only
+    // wires up drawing against the stub modules' default state, so the
+    // scene is visible but static (nothing ticks yet).
+    window.SignalRelay.render.drawFrame();
 
     requestAnimationFrame(gameLoop);
   }

@@ -14,11 +14,22 @@
   let lastTimestamp = 0;
   const canvas = document.getElementById("gameCanvas");
 
+  function getCanvasCoords(evt) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (evt.clientX - rect.left) * scaleX,
+      y: (evt.clientY - rect.top) * scaleY,
+    };
+  }
+
   canvas.addEventListener("click", () => {
     const station = window.SignalRelay.stationCore.station;
 
     if (station.runState === "start") {
       window.SignalRelay.requestQueue.reset();
+      window.SignalRelay.bandwidthRouter.reset();
       window.SignalRelay.stationCore.startRun();
     } else if (station.runState === "gameover" || station.runState === "daycomplete") {
       // Screen flow per GDD: GAME OVER / DAY COMPLETE -> restart input -> START.
@@ -26,6 +37,22 @@
       // returns to the start screen, matching the documented flow.
       window.SignalRelay.stationCore.reset();
     }
+  });
+
+  canvas.addEventListener("mousedown", (evt) => {
+    if (window.SignalRelay.stationCore.station.runState !== "playing") return;
+    const { x, y } = getCanvasCoords(evt);
+    window.SignalRelay.bandwidthRouter.startDrag(x, y);
+  });
+
+  canvas.addEventListener("mousemove", (evt) => {
+    const { x, y } = getCanvasCoords(evt);
+    window.SignalRelay.bandwidthRouter.updateDrag(x, y);
+  });
+
+  canvas.addEventListener("mouseup", (evt) => {
+    const { x, y } = getCanvasCoords(evt);
+    window.SignalRelay.bandwidthRouter.endDrag(x, y);
   });
 
   function gameLoop(timestamp) {

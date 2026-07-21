@@ -268,8 +268,25 @@ window.SignalRelay.render = (function () {
     drawStateOverlay();
   }
 
+  function getDishCenter() {
+    return { x: DISH_X, y: DISH_Y, radius: DISH_RADIUS };
+  }
+
+  function getRequestCardRects() {
+    const requests = window.SignalRelay.requestQueue.queueState.requests;
+    const rects = [];
+    requests.forEach((req, i) => {
+      const cardY = QUEUE_TOP + i * (QUEUE_CARD_HEIGHT + QUEUE_CARD_GAP);
+      if (cardY + QUEUE_CARD_HEIGHT > canvas.height) return; // off-screen, matches drawRequestQueue
+      rects.push({ id: req.id, x: QUEUE_X, y: cardY, width: QUEUE_CARD_WIDTH, height: QUEUE_CARD_HEIGHT });
+    });
+    return rects;
+  }
+
   return {
     drawFrame,
+    getDishCenter,
+    getRequestCardRects,
   };
 
 })();

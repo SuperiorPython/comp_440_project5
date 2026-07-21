@@ -18,6 +18,7 @@
     const station = window.SignalRelay.stationCore.station;
 
     if (station.runState === "start") {
+      window.SignalRelay.requestQueue.reset();
       window.SignalRelay.stationCore.startRun();
     } else if (station.runState === "gameover" || station.runState === "daycomplete") {
       // Screen flow per GDD: GAME OVER / DAY COMPLETE -> restart input -> START.
@@ -31,13 +32,16 @@
     const deltaTime = lastTimestamp === 0 ? 0 : (timestamp - lastTimestamp) / 1000;
     lastTimestamp = timestamp;
 
+    const station = window.SignalRelay.stationCore.station;
+
+    if (station.runState === "playing") {
+      window.SignalRelay.requestQueue.tick(deltaTime, station.time);
+      // TODO: once wired in, tick these here too, in order:
+      //   2. bandwidthRouter.updateDelivery (feeds requestQueue)
+      //   3. heatManager.tick (reads bandwidthRouter active count)
+    }
+
     window.SignalRelay.stationCore.tick(deltaTime);
-
-    // TODO: once other systems are wired in, tick them here too, in order:
-    //   1. requestQueue.tick (spawns, deadline misses)
-    //   2. bandwidthRouter.updateDelivery (feeds requestQueue)
-    //   3. heatManager.tick (reads bandwidthRouter active count)
-
     window.SignalRelay.render.drawFrame();
 
     requestAnimationFrame(gameLoop);

@@ -127,8 +127,20 @@ window.SignalRelay.render = (function () {
     });
   }
 
+  const TYPE_COLORS = {
+    research: "#58a6ff",
+    comms: "#a371f7",
+    emergency: "#f85149",
+  };
+  const TYPE_LABELS = {
+    research: "RESEARCH",
+    comms: "COMMS",
+    emergency: "EMERGENCY",
+  };
+
   function drawRequestQueue() {
     const requests = window.SignalRelay.requestQueue.queueState.requests;
+    const currentTime = window.SignalRelay.stationCore.station.time;
 
     ctx.fillStyle = "#8b98a5";
     ctx.font = "16px Arial";
@@ -138,15 +150,55 @@ window.SignalRelay.render = (function () {
     if (requests.length === 0) {
       ctx.fillStyle = "#4b5560";
       ctx.font = "14px Arial";
-      ctx.fillText("(none yet — queue is static until spawning is wired in)", QUEUE_X, QUEUE_TOP + 20);
+      ctx.fillText("(waiting for the first request to spawn...)", QUEUE_X, QUEUE_TOP + 20);
       return;
     }
 
     requests.forEach((req, i) => {
       const cardY = QUEUE_TOP + i * (QUEUE_CARD_HEIGHT + QUEUE_CARD_GAP);
-      ctx.strokeStyle = "#2d3742";
+      if (cardY + QUEUE_CARD_HEIGHT > canvas.height) return; // off-screen, skip
+
+      const color = TYPE_COLORS[req.type] || "#8b98a5";
+      const deadlineAt = req.spawnTime + req.deadlineWindow;
+      const remaining = Math.max(0, deadlineAt - currentTime);
+      const urgent = remaining < req.deadlineWindow * 0.25;
+
+      // Card border, colored by type, brighter/red-tinted when urgent
+      ctx.strokeStyle = urgent ? "#f85149" : color;
+      ctx.lineWidth = urgent ? 2 : 1;
       ctx.strokeRect(QUEUE_X, cardY, QUEUE_CARD_WIDTH, QUEUE_CARD_HEIGHT);
-      // TODO: type icon, bandwidth bar, deadline ring — wired in with Request Queue logic
+      ctx.lineWidth = 1;
+
+      // Type label
+      ctx.fillStyle = color;
+      ctx.font = "13px Arial";
+      ctx.textAlign = "left";
+      ctx.fillText(TYPE_LABELS[req.type] || req.type.toUpperCase(), QUEUE_X + 12, cardY + 20);
+
+      // Bandwidth progress
+      ctx.fillStyle = "#8b98a5";
+      ctx.font = "12px Arial";
+      ctx.fillText(
+        `${Math.floor(req.bandwidthDelivered)} / ${req.bandwidthNeeded} bandwidth`,
+        QUEUE_X + 12,
+        cardY + 40
+      );
+
+      const barX = QUEUE_X + 12;
+      const barY = cardY + 48;
+      const barW = QUEUE_CARD_WIDTH - 24;
+      const barH = 8;
+      ctx.strokeStyle = "#2d3742";
+      ctx.strokeRect(barX, barY, barW, barH);
+      ctx.fillStyle = color;
+      ctx.fillRect(barX, barY, barW * (req.bandwidthDelivered / req.bandwidthNeeded), barH);
+
+      // Deadline countdown
+      ctx.fillStyle = urgent ? "#f85149" : "#8b98a5";
+      ctx.font = "12px Arial";
+      ctx.textAlign = "right";
+      ctx.fillText(`${remaining.toFixed(1)}s left`, QUEUE_X + QUEUE_CARD_WIDTH - 12, cardY + 20);
+      ctx.textAlign = "left";
     });
   }
 

@@ -30,6 +30,7 @@
     if (station.runState === "start") {
       window.SignalRelay.requestQueue.reset();
       window.SignalRelay.bandwidthRouter.reset();
+      window.SignalRelay.heatManager.reset();
       window.SignalRelay.stationCore.startRun();
     } else if (station.runState === "gameover" || station.runState === "daycomplete") {
       // Screen flow per GDD: GAME OVER / DAY COMPLETE -> restart input -> START.
@@ -62,10 +63,10 @@
     const station = window.SignalRelay.stationCore.station;
 
     if (station.runState === "playing") {
+      const activeCount = window.SignalRelay.bandwidthRouter.getActiveConnectionCount();
+      window.SignalRelay.heatManager.tick(deltaTime, activeCount);
       window.SignalRelay.bandwidthRouter.updateDelivery(deltaTime, window.SignalRelay.heatManager.isThrottled());
       window.SignalRelay.requestQueue.tick(deltaTime, station.time);
-      // TODO: once wired in, tick this here too:
-      //   heatManager.tick (reads bandwidthRouter active count)
     }
 
     window.SignalRelay.stationCore.tick(deltaTime);

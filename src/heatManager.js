@@ -34,11 +34,20 @@ window.SignalRelay.heatManager = (function () {
     lockoutTimer: 0,
   };
 
+  function reset() {
+    heatState.heat = 0;
+    heatState.throttled = false;
+    heatState.lockout = false;
+    heatState.lockoutTimer = 0;
+  }
+
   function tick(deltaTime, activeConnectionCount) {
-    // TODO: integrate heat per the formula above, clamp to [0, HEAT_MAX]
-    // TODO: set throttled = heat > HEAT_THROTTLE_THRESHOLD
-    // TODO: if heat reaches HEAT_MAX, trigger lockout
-    // TODO: if lockout active, count down lockoutTimer, clear at 0
+    // NOTE: lockout transition (heat hitting HEAT_MAX) is intentionally not
+    // wired yet — that's commit 8, "Wire lockout behavior into Bandwidth
+    // Router". This commit only integrates heat and flips the throttle flag.
+    const dHeat = (HEAT_GAIN_PER_ACTIVE_CONNECTION * activeConnectionCount - HEAT_PASSIVE_DECAY) * deltaTime;
+    heatState.heat = Math.max(0, Math.min(HEAT_MAX, heatState.heat + dHeat));
+    heatState.throttled = heatState.heat > HEAT_THROTTLE_THRESHOLD;
   }
 
   function isThrottled() {
@@ -51,6 +60,7 @@ window.SignalRelay.heatManager = (function () {
 
   return {
     heatState,
+    reset,
     tick,
     isThrottled,
     isLockedOut,

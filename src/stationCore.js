@@ -24,6 +24,7 @@ window.SignalRelay.stationCore = (function () {
     time: 0,
     reputation: REPUTATION_START,
     runState: "start", // "start" | "playing" | "gameover" | "daycomplete"
+    stats: { completed: 0, missed: 0 },
   };
 
   function clamp(value, min, max) {
@@ -34,6 +35,7 @@ window.SignalRelay.stationCore = (function () {
     station.time = 0;
     station.reputation = REPUTATION_START;
     station.runState = "start";
+    station.stats = { completed: 0, missed: 0 };
   }
 
   function startRun() {
@@ -63,12 +65,22 @@ window.SignalRelay.stationCore = (function () {
     }
   }
 
+  function recordCompletion() {
+    station.stats.completed += 1;
+  }
+
+  function recordMiss() {
+    station.stats.missed += 1;
+  }
+
   return {
     station,
     reset,
     startRun,
     tick,
     applyReputationDelta,
+    recordCompletion,
+    recordMiss,
     RUN_DURATION_SECONDS,
   };
 

@@ -79,6 +79,7 @@ window.SignalRelay.requestQueue = (function () {
 
     const request = queueState.requests[index];
     window.SignalRelay.stationCore.applyReputationDelta(request.value);
+    window.SignalRelay.stationCore.recordCompletion();
     window.SignalRelay.bandwidthRouter.releaseSlot(request.id);
     queueState.requests.splice(index, 1);
   }
@@ -89,6 +90,7 @@ window.SignalRelay.requestQueue = (function () {
 
     const request = queueState.requests[index];
     window.SignalRelay.stationCore.applyReputationDelta(request.missValue);
+    window.SignalRelay.stationCore.recordMiss();
     window.SignalRelay.bandwidthRouter.releaseSlot(request.id);
     queueState.requests.splice(index, 1);
   }

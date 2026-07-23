@@ -244,17 +244,31 @@ window.SignalRelay.render = (function () {
     } else if (station.runState === "gameover") {
       ctx.fillStyle = "#f85149";
       ctx.font = "26px Arial";
-      ctx.fillText("SYSTEM FAILURE", canvas.width / 2, canvas.height / 2 - 20);
+      ctx.fillText("SYSTEM FAILURE", canvas.width / 2, canvas.height / 2 - 30);
       ctx.fillStyle = "#8b98a5";
       ctx.font = "16px Arial";
-      ctx.fillText("Reputation depleted — click to return to start", canvas.width / 2, canvas.height / 2 + 16);
+      ctx.fillText("Reputation depleted", canvas.width / 2, canvas.height / 2 + 4);
+      ctx.fillText(
+        `Completed: ${station.stats.completed}   Missed: ${station.stats.missed}`,
+        canvas.width / 2, canvas.height / 2 + 28
+      );
+      ctx.fillStyle = "#4b5560";
+      ctx.font = "13px Arial";
+      ctx.fillText("Click to return to start", canvas.width / 2, canvas.height / 2 + 54);
     } else if (station.runState === "daycomplete") {
       ctx.fillStyle = "#3fb950";
       ctx.font = "26px Arial";
-      ctx.fillText("DAY COMPLETE", canvas.width / 2, canvas.height / 2 - 20);
+      ctx.fillText("DAY COMPLETE", canvas.width / 2, canvas.height / 2 - 30);
       ctx.fillStyle = "#8b98a5";
       ctx.font = "16px Arial";
-      ctx.fillText(`Final reputation: ${Math.round(station.reputation)} — click to return to start`, canvas.width / 2, canvas.height / 2 + 16);
+      ctx.fillText(`Final reputation: ${Math.round(station.reputation)}`, canvas.width / 2, canvas.height / 2 + 4);
+      ctx.fillText(
+        `Completed: ${station.stats.completed}   Missed: ${station.stats.missed}`,
+        canvas.width / 2, canvas.height / 2 + 28
+      );
+      ctx.fillStyle = "#4b5560";
+      ctx.font = "13px Arial";
+      ctx.fillText("Click to return to start", canvas.width / 2, canvas.height / 2 + 54);
     }
   }
 

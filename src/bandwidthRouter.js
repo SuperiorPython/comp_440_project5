@@ -45,6 +45,8 @@ window.SignalRelay.bandwidthRouter = (function () {
   }
 
   function startDrag(x, y) {
+    if (window.SignalRelay.heatManager.isLockedOut()) return; // no new connections during lockout
+
     const dish = window.SignalRelay.render.getDishCenter();
     const dx = x - dish.x;
     const dy = y - dish.y;

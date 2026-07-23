@@ -42,12 +42,31 @@ window.SignalRelay.heatManager = (function () {
   }
 
   function tick(deltaTime, activeConnectionCount) {
-    // NOTE: lockout transition (heat hitting HEAT_MAX) is intentionally not
-    // wired yet — that's commit 8, "Wire lockout behavior into Bandwidth
-    // Router". This commit only integrates heat and flips the throttle flag.
+    if (heatState.lockout) {
+      // Heat is frozen during lockout — it does not continue to decay or
+      // gain. It resets to a fixed recovery value (not just "wherever decay
+      // left it") when the lockout timer runs out, per GDD 3.2.
+      heatState.lockoutTimer -= deltaTime;
+      if (heatState.lockoutTimer <= 0) {
+        heatState.lockout = false;
+        heatState.lockoutTimer = 0;
+        heatState.heat = LOCKOUT_RESET_HEAT;
+        heatState.throttled = heatState.heat > HEAT_THROTTLE_THRESHOLD;
+      }
+      return;
+    }
+
     const dHeat = (HEAT_GAIN_PER_ACTIVE_CONNECTION * activeConnectionCount - HEAT_PASSIVE_DECAY) * deltaTime;
     heatState.heat = Math.max(0, Math.min(HEAT_MAX, heatState.heat + dHeat));
     heatState.throttled = heatState.heat > HEAT_THROTTLE_THRESHOLD;
+
+    if (heatState.heat >= HEAT_MAX) {
+      // Per the GDD state ownership table, Heat Manager is the one system
+      // allowed to force-clear Bandwidth Router's slots.
+      heatState.lockout = true;
+      heatState.lockoutTimer = LOCKOUT_DURATION;
+      window.SignalRelay.bandwidthRouter.forceClearAllSlots();
+    }
   }
 
   function isThrottled() {

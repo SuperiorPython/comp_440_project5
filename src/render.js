@@ -112,15 +112,19 @@ window.SignalRelay.render = (function () {
     ctx.textAlign = "center";
     ctx.fillText("DISH", DISH_X, DISH_Y + 5);
 
-    // Slot sockets
+    // Slot sockets — color communicates state: empty / active / throttled
+    const throttled = window.SignalRelay.heatManager.isThrottled();
     SLOT_ANGLES.forEach((angle, i) => {
       const sx = DISH_X + Math.cos(angle) * SLOT_DISTANCE;
       const sy = DISH_Y + Math.sin(angle) * SLOT_DISTANCE;
       const occupied = router.slots[i] !== null;
 
+      let fillColor = "#161b22";
+      if (occupied) fillColor = throttled ? "#d29922" : "#1f6feb";
+
       ctx.beginPath();
       ctx.arc(sx, sy, SLOT_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = occupied ? "#1f6feb" : "#161b22";
+      ctx.fillStyle = fillColor;
       ctx.fill();
       ctx.strokeStyle = "#3d4c5c";
       ctx.stroke();
@@ -137,6 +141,66 @@ window.SignalRelay.render = (function () {
     comms: "COMMS",
     emergency: "EMERGENCY",
   };
+
+  function drawTypeIcon(cx, cy, type, color) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 1.5;
+
+    if (type === "research") {
+      // Magnifying glass: circle + handle
+      ctx.beginPath();
+      ctx.arc(-1, -1, 4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(2, 2);
+      ctx.lineTo(5, 5);
+      ctx.stroke();
+    } else if (type === "comms") {
+      // Radio waves: nested arcs
+      ctx.beginPath();
+      ctx.arc(0, 5, 3, Math.PI, 0, false);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, 5, 6, Math.PI, 0, false);
+      ctx.stroke();
+    } else if (type === "emergency") {
+      // Triangle with exclamation mark
+      ctx.beginPath();
+      ctx.moveTo(0, -6);
+      ctx.lineTo(6, 6);
+      ctx.lineTo(-6, 6);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -2);
+      ctx.lineTo(0, 1.5);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(0, 3.5, 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawDeadlineRing(cx, cy, radius, remainingFraction, urgent) {
+    // Dim background ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = "#2d3742";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Bright arc shrinking clockwise from 12 o'clock as the deadline approaches
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + remainingFraction * Math.PI * 2);
+    ctx.strokeStyle = urgent ? "#f85149" : "#58a6ff";
+    ctx.stroke();
+    ctx.lineWidth = 1;
+  }
 
   function drawRequestQueue() {
     const requests = window.SignalRelay.requestQueue.queueState.requests;
@@ -169,11 +233,12 @@ window.SignalRelay.render = (function () {
       ctx.strokeRect(QUEUE_X, cardY, QUEUE_CARD_WIDTH, QUEUE_CARD_HEIGHT);
       ctx.lineWidth = 1;
 
-      // Type label
+      // Type icon + label
+      drawTypeIcon(QUEUE_X + 18, cardY + 16, req.type, color);
       ctx.fillStyle = color;
       ctx.font = "13px Arial";
       ctx.textAlign = "left";
-      ctx.fillText(TYPE_LABELS[req.type] || req.type.toUpperCase(), QUEUE_X + 12, cardY + 20);
+      ctx.fillText(TYPE_LABELS[req.type] || req.type.toUpperCase(), QUEUE_X + 32, cardY + 20);
 
       // Bandwidth progress
       ctx.fillStyle = "#8b98a5";
@@ -193,11 +258,15 @@ window.SignalRelay.render = (function () {
       ctx.fillStyle = color;
       ctx.fillRect(barX, barY, barW * (req.bandwidthDelivered / req.bandwidthNeeded), barH);
 
-      // Deadline countdown
+      // Deadline ring, top-right of card
+      const remainingFraction = Math.max(0, remaining / req.deadlineWindow);
+      const ringCx = QUEUE_X + QUEUE_CARD_WIDTH - 24;
+      const ringCy = cardY + 22;
+      drawDeadlineRing(ringCx, ringCy, 14, remainingFraction, urgent);
       ctx.fillStyle = urgent ? "#f85149" : "#8b98a5";
-      ctx.font = "12px Arial";
-      ctx.textAlign = "right";
-      ctx.fillText(`${remaining.toFixed(1)}s left`, QUEUE_X + QUEUE_CARD_WIDTH - 12, cardY + 20);
+      ctx.font = "10px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(`${remaining.toFixed(0)}s`, ringCx, ringCy + 3);
       ctx.textAlign = "left";
     });
   }
@@ -216,13 +285,17 @@ window.SignalRelay.render = (function () {
 
   function drawLockoutBanner() {
     if (!window.SignalRelay.heatManager.isLockedOut()) return;
+    const remaining = window.SignalRelay.heatManager.heatState.lockoutTimer;
 
     ctx.fillStyle = "rgba(248, 81, 73, 0.85)";
-    ctx.fillRect(DISH_X - DISH_RADIUS, DISH_Y - 12, DISH_RADIUS * 2, 24);
+    ctx.fillRect(DISH_X - DISH_RADIUS, DISH_Y - 24, DISH_RADIUS * 2, 48);
+
     ctx.fillStyle = "#0e141b";
-    ctx.font = "13px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("LOCKOUT", DISH_X, DISH_Y + 5);
+    ctx.font = "14px Arial";
+    ctx.fillText("LOCKOUT", DISH_X, DISH_Y - 4);
+    ctx.font = "12px Arial";
+    ctx.fillText(`${Math.max(0, remaining).toFixed(1)}s`, DISH_X, DISH_Y + 14);
   }
 
   function drawStateOverlay() {

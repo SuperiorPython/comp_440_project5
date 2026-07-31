@@ -66,7 +66,7 @@
       const heatRate = window.SignalRelay.bandwidthRouter.getHeatGenerationRate();
       window.SignalRelay.heatManager.tick(deltaTime, heatRate);
       window.SignalRelay.bandwidthRouter.updateDelivery(deltaTime, window.SignalRelay.heatManager.isThrottled());
-      window.SignalRelay.requestQueue.tick(deltaTime, station.time);
+      window.SignalRelay.requestQueue.tick(deltaTime, station.time, station.reputation);
     }
 
     window.SignalRelay.stationCore.tick(deltaTime);

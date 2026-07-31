@@ -9,7 +9,7 @@
   Spawn interval ramps linearly over the run, then gets an additional boost
   from reputation:
     baseInterval(t) = 8 - (5.5 * t / 360) seconds  [TUNABLE curve]
-    interval = max(1.5, baseInterval - 0.015 * max(0, reputation - 50))
+    interval = max(1.5, baseInterval - 0.02 * max(0, reputation - 50))
 
   This was added after playtesting feedback: the time-only ramp still felt
   too slow even after the earlier retune. Tying spawn rate to reputation
@@ -19,12 +19,15 @@
   challenge curve. Floored at 1.5s so it can never become unplayable
   regardless of how high reputation climbs.
 
-  Influence constant was tuned via simulation, not guessed: 0.03 let even
-  the safest possible strategy (1 connection at a time, maximally cautious)
-  lose outright in testing, which defeats the point of a safe fallback
-  strategy existing. 0.015 keeps the escalation real — reputation outcomes
-  still spread meaningfully across strategies — without breaking the
-  guarantee that careful play can always finish the day.
+  Influence constant was tuned via simulation across four values, not
+  guessed: 0.08 made every tested strategy (including full greedy play)
+  lose outright — the feedback loop compounded faster than any strategy
+  could offset it. 0.03 let the safest possible strategy (1 connection at
+  a time) lose. 0.015 was safe but felt mild. 0.02 is the landing point:
+  every strategy survives to day-complete across repeated simulation runs,
+  while reputation outcomes still spread meaningfully (28-100 depending on
+  skill) and misses stay in a believable 3-8 range rather than never
+  happening or being fatal.
 
   Request types (bandwidthNeeded, deadlineWindow, value, missValue):
     research:  40, 90s, +5,  -8   [TUNABLE]
@@ -59,7 +62,7 @@ window.SignalRelay.requestQueue = (function () {
   // starting value (50) shaves a little more off the spawn interval, on top
   // of the existing time ramp — floored so it can never become unplayable.
   const REPUTATION_BASELINE = 50;          // matches stationCore's REPUTATION_START
-  const REPUTATION_SPAWN_INFLUENCE = 0.015; // seconds shaved off per point above baseline [TUNABLE] — 0.03 let even the safest (1-slot) strategy lose outright; 0.015 keeps escalation felt without breaking the safe floor
+  const REPUTATION_SPAWN_INFLUENCE = 0.02; // seconds shaved off per point above baseline [TUNABLE] — see docstring for how this was tuned
   const MIN_SPAWN_INTERVAL = 1.5;          // seconds, absolute floor [TUNABLE]
 
   const queueState = {

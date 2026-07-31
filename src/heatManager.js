@@ -4,23 +4,27 @@
   Owns: heat value, throttle flag, lockout timer
 
   Per the GDD, heat may ONLY be changed by this module's own per-frame
-  integration, driven by the active-connection count it reads from
-  Bandwidth Router. Bandwidth Router must not set heat directly.
+  integration, driven by the heat generation rate it reads from Bandwidth
+  Router. Bandwidth Router must not set heat directly.
 
-  dHeat = (5 * activeConnections - 3) * deltaTime, clamped [0, 100]
+  dHeat = (heatGenerationRate - 3) * deltaTime, clamped [0, 100]
+
+  heatGenerationRate is NOT a flat per-connection value — it's computed by
+  Bandwidth Router based on which requests are actually connected, weighted
+  by how little bandwidth each one needs (see bandwidthRouter.js
+  getHeatGenerationRate for the formula and rationale). Heat Manager itself
+  stays agnostic to that weighting; it just integrates whatever rate it's
+  given each frame.
 
   Sends to:   Bandwidth Router (throttle + lockout status),
               Station Core (lockout state for run-state checks)
-  Receives from: Bandwidth Router (active connection count, each frame)
-
-  Not wired to anything yet — this is the scaffold commit.
+  Receives from: Bandwidth Router (heat generation rate, each frame)
 */
 
 window.SignalRelay = window.SignalRelay || {};
 
 window.SignalRelay.heatManager = (function () {
 
-  const HEAT_GAIN_PER_ACTIVE_CONNECTION = 5; // heat/sec [TUNABLE]
   const HEAT_PASSIVE_DECAY = 3;              // heat/sec, always applies [TUNABLE]
   const HEAT_MAX = 100;
   const HEAT_THROTTLE_THRESHOLD = 80;        // [TUNABLE]
@@ -41,7 +45,7 @@ window.SignalRelay.heatManager = (function () {
     heatState.lockoutTimer = 0;
   }
 
-  function tick(deltaTime, activeConnectionCount) {
+  function tick(deltaTime, heatGenerationRate) {
     if (heatState.lockout) {
       // Heat is frozen during lockout — it does not continue to decay or
       // gain. It resets to a fixed recovery value (not just "wherever decay
@@ -56,7 +60,7 @@ window.SignalRelay.heatManager = (function () {
       return;
     }
 
-    const dHeat = (HEAT_GAIN_PER_ACTIVE_CONNECTION * activeConnectionCount - HEAT_PASSIVE_DECAY) * deltaTime;
+    const dHeat = (heatGenerationRate - HEAT_PASSIVE_DECAY) * deltaTime;
     heatState.heat = Math.max(0, Math.min(HEAT_MAX, heatState.heat + dHeat));
     heatState.throttled = heatState.heat > HEAT_THROTTLE_THRESHOLD;
 

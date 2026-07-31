@@ -63,8 +63,8 @@
     const station = window.SignalRelay.stationCore.station;
 
     if (station.runState === "playing") {
-      const activeCount = window.SignalRelay.bandwidthRouter.getActiveConnectionCount();
-      window.SignalRelay.heatManager.tick(deltaTime, activeCount);
+      const heatRate = window.SignalRelay.bandwidthRouter.getHeatGenerationRate();
+      window.SignalRelay.heatManager.tick(deltaTime, heatRate);
       window.SignalRelay.bandwidthRouter.updateDelivery(deltaTime, window.SignalRelay.heatManager.isThrottled());
       window.SignalRelay.requestQueue.tick(deltaTime, station.time);
     }

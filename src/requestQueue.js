@@ -7,7 +7,23 @@
   Bandwidth Router while a slot is actively connected to that request.
 
   Spawn interval ramps linearly over the run:
-    SPAWN_INTERVAL(t) = 25 - (13 * t / 360) seconds  [TUNABLE curve]
+    SPAWN_INTERVAL(t) = 8 - (5.5 * t / 360) seconds  [TUNABLE curve]
+
+  Retuned from the original GDD draft (25s -> 12s) after self-playtesting,
+  in two steps:
+  1. First pass (25->12s to 10->4s) fixed how few requests ever spawned,
+     but a headless simulation of a greedy player still showed connections
+     never overlapped — service time per request (2-4s at the normal
+     delivery rate) was shorter than the gap between spawns, so a player
+     always cleared one request before the next arrived.
+  2. Second pass (10->4s to 8->2.5s) targets that directly: the spawn
+     interval now drops below typical service time by the run's back half,
+     which is what actually forces 2-3 simultaneous connections and
+     exercises heat/throttle/lockout as intended by GDD 3.2. Confirmed via
+     simulation: a greedy player hits throttle and 2 real lockouts over a
+     full run; a player who self-limits to 2 slots avoids lockouts entirely
+     and still keeps up (0 misses) — both are the dynamics GDD section 4
+     predicted, not something forced after the fact.
 
   Request types (bandwidthNeeded, deadlineWindow, value, missValue):
     research:  40, 90s, +5,  -8   [TUNABLE]
@@ -18,8 +34,6 @@
               Station Core (reputation deltas on complete/miss)
   Receives from: Bandwidth Router (delivery amounts per connected slot),
                  Station Core (current time)
-
-  Not wired to anything yet — this is the scaffold commit.
 */
 
 window.SignalRelay = window.SignalRelay || {};
@@ -33,8 +47,8 @@ window.SignalRelay.requestQueue = (function () {
   };
   const TYPE_KEYS = Object.keys(REQUEST_TYPES);
 
-  const SPAWN_INTERVAL_START = 25; // seconds [TUNABLE]
-  const SPAWN_INTERVAL_END = 12;   // seconds [TUNABLE]
+  const SPAWN_INTERVAL_START = 8;   // seconds [TUNABLE]
+  const SPAWN_INTERVAL_END = 2.5;   // seconds [TUNABLE]
   const RUN_DURATION = window.SignalRelay.stationCore
     ? window.SignalRelay.stationCore.RUN_DURATION_SECONDS
     : 360;

@@ -9,11 +9,21 @@
     - Heat Manager (force-clear all slots on lockout)
 
   Sends to:   Request Queue (bandwidth-delivered increments),
-              Heat Manager (active connection count)
-  Receives from: Request Queue (open request positions),
+              Heat Manager (heat generation rate — see getHeatGenerationRate)
+  Receives from: Request Queue (open request positions, bandwidthNeeded per
+                 request for heat-rate weighting),
                  Heat Manager (throttle/lockout status)
 
-  Not wired to anything yet — this is the scaffold commit.
+  DEVIATION FROM ORIGINAL GDD/ARCHITECTURE: the GDD originally specified
+  Heat Manager reading a flat "active connection count" from this module,
+  with every connection generating heat equally. After playtesting feedback,
+  heat generation was changed to depend on which requests are connected —
+  low-bandwidth-need requests (emergency) generate heat faster per second
+  than high-bandwidth-need ones (research), on the design rationale that a
+  fast, small burst strains the hardware harder than a big steady transfer.
+  This meant Bandwidth Router had to start computing a weighted rate instead
+  of Heat Manager just counting slots itself, since Heat Manager has no
+  visibility into individual requests' bandwidthNeeded.
 */
 
 window.SignalRelay = window.SignalRelay || {};
@@ -23,6 +33,15 @@ window.SignalRelay.bandwidthRouter = (function () {
   const CONNECTION_SLOTS = 3; // fixed, mirrors the project's own scope ceiling
   const BANDWIDTH_DELIVERY_RATE = 10;   // units/sec, normal [TUNABLE]
   const THROTTLED_DELIVERY_RATE = 5;    // units/sec, heat > 80 [TUNABLE]
+
+  // A connection's heat contribution scales inversely with the request's
+  // bandwidthNeeded: a request needing less bandwidth generates MORE heat
+  // per second than one needing more, at this reference/base rate.
+  //   research  (needs 40): 4 * 40/40 = 4.0 heat/sec
+  //   comms     (needs 30): 4 * 40/30 = 5.3 heat/sec
+  //   emergency (needs 20): 4 * 40/20 = 8.0 heat/sec
+  const HEAT_RATE_REFERENCE_BANDWIDTH = 40; // [TUNABLE] matches research, the largest request
+  const HEAT_RATE_BASE = 4;                 // heat/sec at the reference bandwidth [TUNABLE]
 
   const router = {
     slots: [null, null, null], // each slot holds a requestId or null
@@ -42,6 +61,21 @@ window.SignalRelay.bandwidthRouter = (function () {
 
   function getActiveConnectionCount() {
     return router.slots.filter((s) => s !== null).length;
+  }
+
+  function getHeatGenerationRate() {
+    const requests = window.SignalRelay.requestQueue.queueState.requests;
+    let totalRate = 0;
+
+    router.slots.forEach((requestId) => {
+      if (requestId === null) return;
+      const request = requests.find((r) => r.id === requestId);
+      if (!request) return; // defensive: slot pointed at a request that's already gone
+
+      totalRate += HEAT_RATE_BASE * (HEAT_RATE_REFERENCE_BANDWIDTH / request.bandwidthNeeded);
+    });
+
+    return totalRate;
   }
 
   function startDrag(x, y) {
@@ -130,8 +164,11 @@ window.SignalRelay.bandwidthRouter = (function () {
     CONNECTION_SLOTS,
     BANDWIDTH_DELIVERY_RATE,
     THROTTLED_DELIVERY_RATE,
+    HEAT_RATE_REFERENCE_BANDWIDTH,
+    HEAT_RATE_BASE,
     reset,
     getActiveConnectionCount,
+    getHeatGenerationRate,
     startDrag,
     updateDrag,
     endDrag,

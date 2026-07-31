@@ -18,6 +18,14 @@ window.SignalRelay.render = (function () {
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
 
+  // Dish artwork asset. Drawn once loaded; falls back to a simple circle +
+  // label placeholder until then (or if the asset ever fails to load), so
+  // the game never has a blank gap where the dish should be.
+  const dishImage = new Image();
+  let dishImageLoaded = false;
+  dishImage.onload = () => { dishImageLoaded = true; };
+  dishImage.src = "assets/dish.svg";
+
   // Layout constants. Dish sits center-left; requests queue down the right
   // side per the GDD's onboarding description ("dish rendered center-screen").
   const DISH_X = 260;
@@ -98,19 +106,24 @@ window.SignalRelay.render = (function () {
   function drawDish() {
     const router = window.SignalRelay.bandwidthRouter.router;
 
-    // Dish body
-    ctx.beginPath();
-    ctx.arc(DISH_X, DISH_Y, DISH_RADIUS, 0, Math.PI * 2);
-    ctx.fillStyle = "#1c2430";
-    ctx.fill();
-    ctx.strokeStyle = "#3d4c5c";
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    if (dishImageLoaded) {
+      const size = DISH_RADIUS * 2;
+      ctx.drawImage(dishImage, DISH_X - DISH_RADIUS, DISH_Y - DISH_RADIUS, size, size);
+    } else {
+      // Fallback placeholder — only shown before the asset finishes loading.
+      ctx.beginPath();
+      ctx.arc(DISH_X, DISH_Y, DISH_RADIUS, 0, Math.PI * 2);
+      ctx.fillStyle = "#1c2430";
+      ctx.fill();
+      ctx.strokeStyle = "#3d4c5c";
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
-    ctx.fillStyle = "#e6edf3";
-    ctx.font = "14px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("DISH", DISH_X, DISH_Y + 5);
+      ctx.fillStyle = "#e6edf3";
+      ctx.font = "14px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("DISH", DISH_X, DISH_Y + 5);
+    }
 
     // Slot sockets — color communicates state: empty / active / throttled
     const throttled = window.SignalRelay.heatManager.isThrottled();

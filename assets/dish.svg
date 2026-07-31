@@ -1,0 +1,29 @@
+<svg viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Signal Relay — satellite dish asset
+    Flat vector style, matches the dark HUD palette used throughout render.js
+    (#1c2430 body, #3d4c5c structure, #58a6ff accent). Sized 140x140 to drop
+    directly over the DISH_RADIUS*2 footprint in render.js with no scaling.
+  -->
+
+  <!-- Base pedestal -->
+  <rect x="52" y="118" width="36" height="9" rx="2" fill="#3d4c5c" />
+  <rect x="65" y="88" width="10" height="32" fill="#2d3742" />
+
+  <!-- Support arm from pedestal to dish hub -->
+  <line x1="70" y1="88" x2="70" y2="70" stroke="#3d4c5c" stroke-width="6" stroke-linecap="round" />
+
+  <!-- Parabolic reflector, angled -->
+  <ellipse cx="68" cy="52" rx="54" ry="36" transform="rotate(-18 68 52)"
+           fill="#1c2430" stroke="#58a6ff" stroke-width="3" />
+  <ellipse cx="62" cy="47" rx="40" ry="24" transform="rotate(-18 62 47)"
+           fill="#12181f" opacity="0.55" />
+
+  <!-- Dish hub -->
+  <circle cx="70" cy="70" r="6" fill="#2d3742" stroke="#58a6ff" stroke-width="2" />
+
+  <!-- Feed arm and horn, angled up from the hub toward the dish's focal point -->
+  <line x1="70" y1="70" x2="96" y2="26" stroke="#3d4c5c" stroke-width="4" stroke-linecap="round" />
+  <circle cx="96" cy="26" r="5.5" fill="#58a6ff" />
+  <circle cx="96" cy="26" r="9" fill="none" stroke="#58a6ff" stroke-width="1.5" opacity="0.4" />
+</svg>
